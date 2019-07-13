@@ -12,3 +12,5 @@ pom.xml.asc
 *.sublime-workspace
 .DS_Store
 .cpcache
+.idea
+*.iml
