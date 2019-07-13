@@ -43,21 +43,21 @@
                     (JarEntry. path)
                     (.setLastModifiedTime last-modified))]
         (.putNextEntry out entry)
-        (io/copy in out)
+        (when in (io/copy in out))
         (.closeEntry out)
         (swap! *seen-files assoc path context)))))
-
 
 (defn copy-directory [^File dir out]
   (let [dir-path  (.getPath dir)
         dir-path' (if (str/ends-with? dir-path "/") dir-path (str dir-path "/"))]
     (doseq [^File file (file-seq (io/file dir-path'))
-            :when (.isFile file)]
-      (with-open [in (io/input-stream file)]
-        (let [rel-path (-> (.getPath file) (subs (count dir-path')))
-              modified (FileTime/fromMillis (.lastModified file))]
-        (copy-stream in rel-path modified out))))))
-
+            :when (not= file dir)]
+      (let [rel-path (-> (.getPath file) (subs (count dir-path')))
+            modified (FileTime/fromMillis (.lastModified file))]
+        (if (.isFile file)
+          (with-open [in (io/input-stream file)]
+            (copy-stream in rel-path modified out))
+          (copy-stream nil rel-path modified out))))))
 
 (defn copy-jar [^File file out]
   (with-open [in (JarInputStream. (BufferedInputStream. (FileInputStream. file)))]
